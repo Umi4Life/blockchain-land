@@ -1,60 +1,96 @@
 <template>
-  <v-app>
-    <v-app-bar
-      app
-      color="primary"
-      dark
+  <v-app id="inspire">
+    <v-navigation-drawer
+            v-model="drawer"
+            app
+            right
     >
-      <div class="d-flex align-center">
-        <v-img
-          alt="Vuetify Logo"
-          class="shrink mr-2"
-          contain
-          src="https://cdn.vuetifyjs.com/images/logos/vuetify-logo-dark.png"
-          transition="scale-transition"
-          width="40"
-        />
+      <v-list dense>
+        <v-list-item link>
+          <v-list-item-action>
+            <v-icon>mdi-home</v-icon>
+          </v-list-item-action>
 
-        <v-img
-          alt="Vuetify Name"
-          class="shrink mt-1 hidden-sm-and-down"
-          contain
-          min-width="100"
-          src="https://cdn.vuetifyjs.com/images/logos/vuetify-name-dark.png"
-          width="100"
-        />
-      </div>
+          <v-list-item-content>
+            <v-list-item-title>Home</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
 
-      <v-spacer></v-spacer>
+        <v-list-item link>
+          <v-list-item-action>
+            <v-icon>mdi-contact-mail</v-icon>
+          </v-list-item-action>
 
-      <v-btn
-        href="https://github.com/vuetifyjs/vuetify/releases/latest"
-        target="_blank"
-        text
-      >
-        <span class="mr-2">Latest Release</span>
-        <v-icon>mdi-open-in-new</v-icon>
-      </v-btn>
+          <v-list-item-content>
+            <v-list-item-title>Contact</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+      </v-list>
+    </v-navigation-drawer>
+
+    <v-app-bar
+            app
+            color="cyan"
+            dark
+    >
+      <v-spacer />
+
+      <v-toolbar-title>Application</v-toolbar-title>
+
+      <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
     </v-app-bar>
 
     <v-content>
-      <HelloWorld/>
+      <v-container
+              class="fill-height"
+              fluid
+      >
+        <v-row
+                align="center"
+                justify="center"
+        >
+          <v-col class="text-center">
+              <!--CONTENT-->
+
+
+
+
+              <HelloWorld/>
+
+
+
+
+
+              <!--CONTENT-->
+          </v-col>
+        </v-row>
+      </v-container>
     </v-content>
+
+    <v-footer
+            color="cyan"
+            app
+    >
+      <v-spacer />
+
+      <span class="white--text">&copy; 2019</span>
+    </v-footer>
   </v-app>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld';
+    import HelloWorld from './components/HelloWorld';
+    export default {
+        name: 'app',
+        components: {
+            HelloWorld,
+        },
+        props: {
+            source: String,
+        },
 
-export default {
-  name: 'App',
-
-  components: {
-    HelloWorld,
-  },
-
-  data: () => ({
-    //
-  }),
-};
+        data: () => ({
+        drawer: null,
+    }),
+    }
 </script>
