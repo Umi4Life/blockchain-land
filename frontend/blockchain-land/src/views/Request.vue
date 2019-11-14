@@ -91,7 +91,6 @@
         methods: {
             removeItem: function (i){
                 // this.items.splice(, 1);
-                /* eslint-disable no-console */
                 let index = this.items.indexOf(i,);
                 this.items.splice(index, 1);
             },
@@ -103,7 +102,6 @@
                 },)
             },
             send: function (){
-                /* eslint-disable no-console */
                 console.log(this.items)
             }
         }
