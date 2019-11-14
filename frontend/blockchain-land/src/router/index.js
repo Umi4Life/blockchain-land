@@ -1,6 +1,9 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Login from '../views/Login.vue'
+import Request from '../views/Request.vue'
+import About from '../views/About.vue'
+
 
 Vue.use(VueRouter)
 
@@ -19,12 +22,17 @@ const routes = [
     component: Login
   },
   {
+    path: '/request',
+    name: 'request',
+    component: Request
+  },
+  {
     path: '/about',
     name: 'about',
-    meta: {
-      requiresAuth: true
-    },
-    component: () => import(/* webpackChunkName: "about" */ '../views/About.vue')
+    // meta: {
+    //   requiresAuth: true
+    // },
+    component: About
   }
 ]
 

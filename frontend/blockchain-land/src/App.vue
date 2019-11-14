@@ -8,6 +8,7 @@
             <v-spacer />
 
             <v-toolbar-title>Application</v-toolbar-title>
+
         </v-app-bar>
 
         <v-content>
@@ -17,7 +18,6 @@
             >
                 <v-row
                         align="center"
-                        justify="center"
                 >
                     <v-col class="text-center">
                         <!--CONTENT-->

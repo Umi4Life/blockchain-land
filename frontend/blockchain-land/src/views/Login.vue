@@ -76,7 +76,7 @@ export default {
                       alert(errorObject.code);
                   });
 
-                  // alert(user.user.uid + '\n' + val)
+                  alert(user.user.uid + '\n' + val)
               },
               function(err){
                 alert(err.message)
