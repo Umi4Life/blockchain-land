@@ -67,6 +67,7 @@ contract DLTokenERC20 is Context, IERC20 {
      * - the caller must have a balance of at least `amount`.
      */
     function transfer(address recipient, uint256 amount) public returns (bool) {
+        require(amount <= allowance(_msgSender(), recipient), "Your transaction exceeds your allowance");
         _transfer(_msgSender(), recipient, amount);
         return true;
     }
@@ -103,6 +104,7 @@ contract DLTokenERC20 is Context, IERC20 {
      * `amount`.
      */
     function transferFrom(address sender, address recipient, uint256 amount) public returns (bool) {
+        require(amount <= allowance(sender, recipient), "Your transaction exceeds the sender's allowance");
         _transfer(sender, recipient, amount);
         _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount));
         return true;
