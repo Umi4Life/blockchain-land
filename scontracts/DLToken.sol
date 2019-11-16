@@ -33,11 +33,15 @@ contract DLToken is Context, IERC20 {
     using SafeMath for uint256;
 
     mapping (address => uint256) private _balances;
-
+    mapping (uint256 => address) private _companyAddress;
+    mapping (address => uint256[]) private _companyRID;
     mapping (address => mapping (address => uint256)) private _allowances;
 
     uint256 private _totalSupply;
     address private _minter;
+    // uint256 private _bankDLToken = _balances[address(this)]
+    uint256 private _cost = 100; //fee for requesting
+    uint256 private _RIDglobal = 0;
 
     modifier onlyLD() {
         require(isLD(), "Only Land Department of Land has permission to do this");
@@ -252,9 +256,18 @@ contract DLToken is Context, IERC20 {
     function transferByMinter(address companyAddress, uint256 tokens) public onlyLD returns (bool){
         transfer(companyAddress, tokens);
     }
-    function confirmAcceptedRequest(uint256 fee) public returns (bool){
-        transfer(_minter, fee);
+    function confirmAcceptedRequest(address companyAddress, uint256 fee) public returns (bool){
+        transferFrom(companyAddress, _minter, fee);
     }
+    event RequestSent(address indexed from, address indexed to, uint256 value);
+
+    // function sendRequest(uint256 sent, string encryptedData) external payable returns (uint256){ //You should put ether in it
+    //     require(msg.value >= sent);
+    //     _RIDorder+=1;
+    //     return _RIDorder;
+    // }
+    function checkContractBalance() external returns (uint256);
+    //unction deposit(uint256 sentEther) external returns (uint256);
 
     constructor () public{ //use when deploy
         _minter = _msgSender();
