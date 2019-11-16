@@ -4,6 +4,37 @@
                 class="fill-height"
                 fluid
         >
+
+            <v-row
+                    align="center"
+                    justify="center"
+            >
+                <v-col
+                        cols="12"
+                        sm="8"
+                        md="4"
+                >
+
+                    <v-card  class="elevation-12" >
+                        <v-card-text>
+                            <v-textarea
+                                    v-model="this.reason"
+                                    color="teal"
+                            >
+                                <template v-slot:label>
+                                    <div>
+                                        Reason(s)
+                                    </div>
+                                </template>
+                            </v-textarea>
+                        </v-card-text>
+                    </v-card>
+
+                </v-col>
+            </v-row>
+
+
+
             <v-row
                     v-for="i in this.items" v-bind:key="i.id"
                     align="center"
@@ -14,8 +45,9 @@
                         sm="8"
                         md="4"
                 >
-                    <v-card  class="elevation-12" >
-                        <div>
+
+                    <v-card transition="slide-y-transition" class="elevation-12" >
+                        <template v-slot:activator="{ on }">
                         <v-card-actions>
                             <v-spacer />
                             <v-btn text icon color="black"
@@ -40,8 +72,9 @@
                                 />
                             </v-form>
                         </v-card-text>
-                        </div>
+                        </template>
                     </v-card>
+
 
 
                 </v-col>
@@ -80,6 +113,7 @@
     export default {
         name: "request",
         data: () => ({
+            reason: "",
             items: [
                 {
                     province: "",
@@ -109,5 +143,8 @@
 </script>
 
 <style scoped>
+    .fade-enter-active, .fade-leave-active {
+        transition: opacity .5s;
+    }
 
 </style>
