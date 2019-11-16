@@ -46,8 +46,7 @@
                         md="4"
                 >
 
-                    <v-card transition="slide-y-transition" class="elevation-12" >
-                        <template v-slot:activator="{ on }">
+                    <v-card  class="elevation-12" >
                         <v-card-actions>
                             <v-spacer />
                             <v-btn text icon color="black"
@@ -72,7 +71,7 @@
                                 />
                             </v-form>
                         </v-card-text>
-                        </template>
+
                     </v-card>
 
 
