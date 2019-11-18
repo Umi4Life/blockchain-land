@@ -238,16 +238,15 @@ contract DLToken is Context, IERC20 {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Parm : We will start working here and leave ERC20 original code above. (I may make a new .sol to inherit it later)
     struct RequestForLand { // Struct for request
-        uint128 RID;
+        uint64 RID;
         bool status;
         address companyAddress;
         string encryptedData;
     }
-        // uint256 private _bankDLToken = _balances[address(this)]
+
     uint256 private _costWei; //fee for requesting
     uint256 private _costToken; //fee for requesting
-
-    uint64 private _RIDglobal;
+    uint64 private _RIDglobal; //RID tracker
     mapping (uint64 => address) private _companyAddress;
     
     modifier onlyLD() {
@@ -258,32 +257,51 @@ contract DLToken is Context, IERC20 {
         return _msgSender() == _minter;
     }
     
-    RequestForLand[] public requests;
-    event RequestSent(address indexed from, address indexed to, uint256 value);
+    RequestForLand[] public requests; //This is where all requests are stored
+    event RequestSent(address indexed from, address indexed to, uint256 value, uint64 RID);
 
-    function sendRequest(string encryptedData) public payable returns (uint128){ //You should put ether in it
-        require(msg.value >= _cost && balanceOf(_msgSender()) >= _costToken);
-        transfer(address(this), _cost);
+    function sendRequest(string memory encryptedData) public payable returns (uint64){ //You should put ether in it
+        require(msg.value == _costWei  && balanceOf(_msgSender()) >= _costToken, 'Buy some tokens or ether first!');
+
+        transfer(address(this), _costToken);
         _companyAddress[_RIDglobal] = _msgSender();
-        requests.push(RequestForLand(_msgSender(), false, _minter, _cost));
-        _RIDglobal.add(1);
-        emit RequestSent(_msgSender(), _minter, _cost);
-        return _RIDglobal;
+        requests.push(RequestForLand(_RIDglobal, false, _msgSender(), encryptedData)); //assume that RID is 0 at first
+        emit RequestSent(_msgSender(), _minter, _costToken,_RIDglobal);
+        uint64 toadd = 1;
+        return _RIDglobal.add(toadd);
+    }
+    function checkRequest(uint64 RID) public view returns (uint64, bool, address, string memory){ //Read from the memory
+        return (RID,  _getRequestStatus(RID), _getRequestAddress(RID),  _getRequestData(RID);
     }
     
-
+    function _getRequestAddress(uint64 RID) private view returns (address){
+        require(RID < _RIDglobal);
+        return requests[RID].companyAddress;
+    }
+    function _getRequestStatus(uint64 RID) private view returns (bool){
+        require(RID < _RIDglobal);
+        return requests[RID].status; 
+    }
+    function _getRequestData(uint64 RID) private view returns ( string memory){
+        require(RID < _RIDglobal);
+        return requests[RID].encryptedData; 
+    }
+    
+    function _setRequestStatus(uint64 RID, bool toSet) private onlyLD {
+        require(RID < _RIDglobal);
+        requests[RID].status = toSet; //set request status
+    }
+    function _burnContract() private payable onlyLD{
+        require(checkContractBalance()>=_costWei);
+        address(0x0).transfer(_costWei); //proof of burn
+    }
     function checkContractBalance() public view returns (uint256){
         return address(this).balance; //return how much ether contract contain
     }
-
-    function checkContractBalance() public view returns (uint256){
-        return address(this).balance; //return how much ether contract contain
-    }
-    //unction deposit(uint256 sentEther) external returns (uint256);
 
     constructor () public{ //use when deploy
         _minter = _msgSender();
-        _costWei = 20000;
+        _costWei = 30000;
         _costToken = 100;
         _RIDglobal = 0;
         _mint(_minter, 1000000000000);
