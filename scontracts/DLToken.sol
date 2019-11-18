@@ -31,25 +31,14 @@ import "./SafeMath.sol";
  */
 contract DLToken is Context, IERC20 {
     using SafeMath for uint256;
-
+    using SafeMath for uint64; //Added this library for RID
+    
     mapping (address => uint256) private _balances;
-    mapping (uint256 => address) private _companyAddress;
-    mapping (address => uint256[]) private _companyRID;
     mapping (address => mapping (address => uint256)) private _allowances;
 
     uint256 private _totalSupply;
     address private _minter;
-    // uint256 private _bankDLToken = _balances[address(this)]
-    uint256 private _cost = 100; //fee for requesting
-    uint256 private _RIDglobal = 0;
 
-    modifier onlyLD() {
-        require(isLD(), "Only Land Department of Land has permission to do this");
-    _;
-    }
-    function isLD() public view returns(bool) {
-    return _msgSender() == _minter;
-  }
     /**
      * @dev See {IERC20-totalSupply}.
      */
@@ -246,31 +235,57 @@ contract DLToken is Context, IERC20 {
         _burn(account, amount);
         _approve(account, _msgSender(), _allowances[account][_msgSender()].sub(amount));
     }
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Parm : We will start working here and leave ERC20 original code above. (I may make a new .sol to inherit it later)
+    struct RequestForLand { // Struct for request
+        uint128 RID;
+        bool status;
+        address companyAddress;
+        string encryptedData;
+    }
+        // uint256 private _bankDLToken = _balances[address(this)]
+    uint256 private _costWei; //fee for requesting
+    uint256 private _costToken; //fee for requesting
 
-    /**
-     * Parm : Say we want to avoid spending too much gases. Use these functions.
-     * transferByMinter
-     * confirmAcceptedRequest
-     * These functions are simple but the frontend devs have to responsible for the DAPPs variables.
-     */
-    function transferByMinter(address companyAddress, uint256 tokens) public onlyLD returns (bool){
-        transfer(companyAddress, tokens);
+    uint64 private _RIDglobal;
+    mapping (uint64 => address) private _companyAddress;
+    
+    modifier onlyLD() {
+        require(isLD(), "Only Land Department of Land has permission to do this");
+        _;
     }
-    function confirmAcceptedRequest(address companyAddress, uint256 fee) public returns (bool){
-        transferFrom(companyAddress, _minter, fee);
+    function isLD() public view returns(bool) {
+        return _msgSender() == _minter;
     }
+    
+    RequestForLand[] public requests;
     event RequestSent(address indexed from, address indexed to, uint256 value);
 
-    // function sendRequest(uint256 sent, string encryptedData) external payable returns (uint256){ //You should put ether in it
-    //     require(msg.value >= sent);
-    //     _RIDorder+=1;
-    //     return _RIDorder;
-    // }
-    function checkContractBalance() external returns (uint256);
+    function sendRequest(string encryptedData) public payable returns (uint128){ //You should put ether in it
+        require(msg.value >= _cost && balanceOf(_msgSender()) >= _costToken);
+        transfer(address(this), _cost);
+        _companyAddress[_RIDglobal] = _msgSender();
+        requests.push(RequestForLand(_msgSender(), false, _minter, _cost));
+        _RIDglobal.add(1);
+        emit RequestSent(_msgSender(), _minter, _cost);
+        return _RIDglobal;
+    }
+    
+
+    function checkContractBalance() public view returns (uint256){
+        return address(this).balance; //return how much ether contract contain
+    }
+
+    function checkContractBalance() public view returns (uint256){
+        return address(this).balance; //return how much ether contract contain
+    }
     //unction deposit(uint256 sentEther) external returns (uint256);
 
     constructor () public{ //use when deploy
         _minter = _msgSender();
+        _costWei = 20000;
+        _costToken = 100;
+        _RIDglobal = 0;
         _mint(_minter, 1000000000000);
     }
 }
