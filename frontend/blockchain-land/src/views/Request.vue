@@ -4,7 +4,6 @@
                 class="fill-height"
                 fluid
         >
-
             <v-row
                     align="center"
                     justify="center"
@@ -18,14 +17,10 @@
                     <v-card  class="elevation-12" >
                         <v-card-text>
                             <v-textarea
-                                    v-model="this.reason"
+                                    v-model="reason"
                                     color="teal"
+                                    label="Reason(s)"
                             >
-                                <template v-slot:label>
-                                    <div>
-                                        Reason(s)
-                                    </div>
-                                </template>
                             </v-textarea>
                         </v-card-text>
                     </v-card>
@@ -109,6 +104,8 @@
 </template>
 
 <script>
+    import Web3 from 'web3'
+    // const CONTRACT = Web3.eth.Contract(ABI,contractAddress)
     export default {
         name: "request",
         data: () => ({
@@ -121,9 +118,29 @@
                 },
             ],
         }),
+        beforeCreate () {
+            if (Web3) {
+                const web3 = new Web3(new Web3.providers.HttpProvider(
+                    'https://rinkeby.infura.io/v3/be6ca8f2fa9e482f9a2e45127499434f'));
+                web3.eth.getBlockNumber().then(blockNumber => {
+                    console.log('Block number = ' + blockNumber);
+                }).catch(console.error);
+                web3.eth.getBalance('0x2B81009886091E1e0B66e7D292cde3De882015B5').then(wei => {
+                    const ether = web3.utils.fromWei(wei, 'ether');
+                    console.log('ether = ' + ether);
+                    console.log('wei = ' + wei);
+                }).catch(console.error);
+            } else {
+                console.error('Cannot find web3');
+            }
+        },
+        computed: {
+            web3 () {
+                return this.$store.state.web3
+            }
+        },
         methods: {
             removeItem: function (i){
-                // this.items.splice(, 1);
                 let index = this.items.indexOf(i,);
                 this.items.splice(index, 1);
             },
@@ -135,15 +152,19 @@
                 },)
             },
             send: function (){
-                console.log(this.items)
-            }
+                let out = {
+                    companyReason: this.reason,
+                    lands: this.items,
+                    status: "unverified"
+                }
+                console.log(JSON.stringify(out))
+            },
+
         }
     }
 </script>
 
 <style scoped>
-    .fade-enter-active, .fade-leave-active {
-        transition: opacity .5s;
-    }
+
 
 </style>
