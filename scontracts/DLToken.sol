@@ -242,6 +242,7 @@ contract DLToken is Context, IERC20 {
         bool status;
         address companyAddress;
         string encryptedData;
+        string docHash;
     }
 
     uint256 private _costWei; //fee for requesting
@@ -265,15 +266,20 @@ contract DLToken is Context, IERC20 {
 
         transfer(address(this), _costToken);
         _companyAddress[_RIDglobal] = _msgSender();
-        requests.push(RequestForLand(_RIDglobal, false, _msgSender(), encryptedData)); //assume that RID is 0 at first
+        requests.push(RequestForLand(_RIDglobal, false, _msgSender(), encryptedData,)); //assume that RID is 0 at first
         emit RequestSent(_msgSender(), _minter, _costToken,_RIDglobal);
         uint64 toadd = 1;
         return _RIDglobal.add(toadd);
     }
     function checkRequest(uint64 RID) public view returns (uint64, bool, address, string memory){ //Read from the memory
-        return (RID,  _getRequestStatus(RID), _getRequestAddress(RID),  _getRequestData(RID);
+        return (RID,  _getRequestStatus(RID), _getRequestAddress(RID),  _getRequestData(RID), _getRequestHash(RID);
     }
     
+    function _getRequestHash(uint64 RID) private view returns (string memory){
+        require(RID < _RIDglobal);
+        return requests[RID].docHash;
+    }
+
     function _getRequestAddress(uint64 RID) private view returns (address){
         require(RID < _RIDglobal);
         return requests[RID].companyAddress;
@@ -291,6 +297,22 @@ contract DLToken is Context, IERC20 {
         require(RID < _RIDglobal);
         requests[RID].status = toSet; //set request status
     }
+
+    function _setHash(uint64 RID, string memory setHash) private onlyLD {
+        require(RID < _RIDglobal);
+        requests[RID].docHash = setHash;
+    }
+
+    function _acceptRequest(uint64 RID) private payable onlyLD {
+        _setRequestStatus(RID, true);
+        _transfer(address(this), _minter, _costToken); // transfer money from dapp to LD
+    }
+
+    function _rejectRequest(uint64 RID) private payable onlyLD {
+        _setRequestStatus(RID, false);
+        _transfer(address(this), requests[RID].companyAddress, _costToken); // transfer money from dapp to company
+    }
+
     function _burnContract() private payable onlyLD{
         require(checkContractBalance()>=_costWei);
         address(0x0).transfer(_costWei); //proof of burn
