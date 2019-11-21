@@ -17,7 +17,7 @@
                     <v-card  class="elevation-12" >
                         <v-card-text>
                             <v-textarea
-                                    v-model="reason"
+                                    v-model="companyReason"
                                     color="teal"
                                     label="Reason(s)"
                             >
@@ -93,6 +93,11 @@
             >
                 <v-col
                 >
+                    <v-text-field
+                            label="Private Key"
+                            v-model="key"
+                            type="password"
+                    />
                     <v-btn color="success" dark large
                     @click="send">
                         Send
@@ -105,59 +110,83 @@
 
 <script>
     import Web3 from 'web3'
-    // const CONTRACT = Web3.eth.Contract(ABI,contractAddress)
+    import store from '../store/index'
+    import sha256 from 'js-sha256'
+    import firebase from 'firebase'
+    import * as web3const from '../util/web3const'
     export default {
         name: "request",
         data: () => ({
-            reason: "",
+            companyReason: "",
             items: [
                 {
-                    province: "",
                     district: "",
                     landNo: "",
+                    province: "",
                 },
             ],
+            key: "",
         }),
         beforeCreate () {
-            if (Web3) {
-                const web3 = new Web3(new Web3.providers.HttpProvider(
-                    'https://rinkeby.infura.io/v3/be6ca8f2fa9e482f9a2e45127499434f'));
-                web3.eth.getBlockNumber().then(blockNumber => {
-                    console.log('Block number = ' + blockNumber);
-                }).catch(console.error);
-                web3.eth.getBalance('0x2B81009886091E1e0B66e7D292cde3De882015B5').then(wei => {
-                    const ether = web3.utils.fromWei(wei, 'ether');
-                    console.log('ether = ' + ether);
-                    console.log('wei = ' + wei);
-                }).catch(console.error);
-            } else {
-                console.error('Cannot find web3');
-            }
         },
         computed: {
-            web3 () {
-                return this.$store.state.web3
-            }
+            uid () {
+                return store.getters.getUid
+            },
         },
         methods: {
+            signAndSendTransaction: function (web3, account, transaction) {
+                return account.signTransaction(transaction).then( function (results) {
+                    if ('rawTransaction' in results) {
+                        web3.eth.sendSignedTransaction(results.rawTransaction).then(function (receipt) {
+                            console.log(receipt)
+                            // contractAddress.value = receipt.contractAddress;
+                            // contractAddress.isDeploying = false;
+                        }).catch(console.error);
+                    } else {
+                        // contractAddress.value = "Cannot find rawTransaction in results";
+                        // contractAddress.isDeploying = false;
+                    }
+
+                })
+                    .catch(console.error);
+            },
             removeItem: function (i){
                 let index = this.items.indexOf(i,);
                 this.items.splice(index, 1);
             },
             addItem: function (){
                 this.items.push({
-                    province: "",
                     district: "",
                     landNo: "",
+                    province: "",
                 },)
             },
             send: function (){
                 let out = {
-                    companyReason: this.reason,
+                    companyReason: this.companyReason,
                     lands: this.items,
                     status: "unverified"
                 }
-                console.log(JSON.stringify(out))
+                const id = Math.floor(Math.random() * (Math.pow(2,64)+1)).toString();
+
+                let sha = sha256(JSON.stringify(out))
+                firebase.database().ref('users/' + this.uid + '/requests/').child(id).set(out)
+
+                if(Web3){
+                    const web3 = new Web3(new Web3.providers.HttpProvider(web3const.HTTPPROVIDER));
+                    const account = web3.eth.accounts.privateKeyToAccount('0x' + this.key);
+                    const contract = new web3.eth.Contract(web3const.ABI, web3const.CONTRACTADDRESS);
+                    var encodedABI = contract.methods.sendRequest(sha).encodeABI();
+                    this.signAndSendTransaction(web3, account, {
+                        from: "0x2B81009886091E1e0B66e7D292cde3De882015B5",
+                        to: web3const.CONTRACTADDRESS,
+                        gas: '30000',
+                        data: encodedABI
+                    });
+
+                }
+
             },
 
         }

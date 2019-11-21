@@ -1,5 +1,5 @@
 <template>
-  <div class="about">
+  <div class="home">
 
     <h1>Blockchain Land</h1>
     <router-link to="/Request">Request Page</router-link>
@@ -307,7 +307,7 @@
     ];
     const HTTPPROVIDER = 'https://rinkeby.infura.io/v3/be6ca8f2fa9e482f9a2e45127499434f';
     export default {
-        name: "about",
+        name: "home",
         data: () => ({
             address: "0x2B81009886091E1e0B66e7D292cde3De882015B5",
             key: "",
