@@ -3,6 +3,7 @@ import VueRouter from 'vue-router'
 import Login from '../views/Login.vue'
 import Request from '../views/Request.vue'
 import About from '../views/About.vue'
+import Land from '../views/Land.vue'
 
 
 Vue.use(VueRouter)
@@ -33,6 +34,14 @@ const routes = [
     //   requiresAuth: true
     // },
     component: About
+  },
+  {
+    path: '/land',
+    name: 'Land department page',
+    // meta: {
+    //   requiresAuth: true
+    // },
+    component: Land
   }
 ]
 
