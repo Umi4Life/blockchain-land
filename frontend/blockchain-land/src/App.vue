@@ -7,8 +7,11 @@
         >
             <v-toolbar-title>Blockchain Land</v-toolbar-title>
             <v-spacer />
-
-            <v-toolbar-title><v-btn @click="signOut()">Logout</v-btn></v-toolbar-title>
+            <v-divider vertical></v-divider>
+            <v-btn v-if="authed" @click="home()" text>Home</v-btn>
+            <v-divider vertical></v-divider>
+            <v-btn @click="signOut()" v-if="authed" text>Logout</v-btn>
+            <v-divider vertical></v-divider>
 
         </v-app-bar>
 
@@ -71,8 +74,14 @@
             loading () {
                 return store.getters.getLoading
             },
+            authed(){
+                return firebase.auth().currentUser
+            }
         },
         methods:{
+            home: function() {
+                router.replace("/home")
+            },
             signOut: function (){
                 store.commit('setLoading', true);
                 firebase.auth().signOut()

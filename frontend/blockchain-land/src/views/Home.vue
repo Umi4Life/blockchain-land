@@ -28,7 +28,6 @@
       <h1>{{this.contractAddress.value}}</h1>
       <h1 v-if="this.contractAddress.isDeploying"> <v-progress-circular indeterminate/></h1>
 
-      <v-btn @click="checkRequest(rid)">Check Request</v-btn>
     </v-container>
 
   </div>
@@ -83,17 +82,6 @@
                     console.error('Cannot find web3');
                 }
             },
-            checkRequest: function(rid){
-                if (Web3) {
-                    const web3 = new Web3(new Web3.providers.HttpProvider(web3const.HTTPPROVIDER));
-                    const contract = new web3.eth.Contract(web3const.ABI, web3const.CONTRACTADDRESS);
-                    contract.methods.checkRequest(14).call().then(function (result) {
-                        console.log(result);
-                    }).catch(console.error);
-                } else {
-                    console.error('Cannot find web3');
-                }
-            }
         }
     }
 </script>

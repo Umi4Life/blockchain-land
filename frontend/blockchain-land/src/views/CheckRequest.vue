@@ -4,8 +4,8 @@
 
             <v-row
                     v-for="(i, j) in this.items"
-                    :keys="j"
-                    align="center"
+                    v-bind:data="i"
+                    v-bind:key="j"
                     justify="center"
             >
                 <v-col
@@ -15,26 +15,53 @@
                 >
 
                     <v-card  class="elevation-12" >
-                        <!--<v-card-actions>-->
-                            <!--<v-spacer />-->
-                            <!--<v-btn text icon color="black"-->
-                                   <!--@click="removeItem(i)">-->
-                                <!--<v-icon>mdi-trash-can-outline</v-icon>-->
-                            <!--</v-btn>-->
-                        <!--</v-card-actions>-->
-                        <v-card-title class="headline">RID: {{j}}</v-card-title>
-
-                        <v-card-title>Reason:  {{i["companyReason"]}}</v-card-title>
-                        <v-card-title>Status: {{i["status"]}}</v-card-title>
-                        <v-card-title>Lands:</v-card-title>
-                        <v-card-subtitle
-                                v-for="land in i.lands"
+                        <v-toolbar
+                                color="primary"
+                                dark
+                                flat
                         >
-                            <div>Province: {{land["province"]}}</div>
-                            <div>Amphur: {{land["amphur"]}}</div>
-                            <div>District: {{land["district"]}}</div>
-                            <div>Land No.: {{land["landNo"]}}</div>
-                        </v-card-subtitle>
+                            <v-toolbar-title>RID: {{j}}</v-toolbar-title>
+                            <v-spacer />
+                        </v-toolbar>
+
+                        <v-card-text class="title text-left black--text">
+                            <div>Reason:  {{i["companyReason"]}}</div>
+                            <div>Status: {{i["status"]}}</div>
+                            <div>Lands: </div>
+                        </v-card-text>
+
+
+                        <v-list
+                        style="max-height: 150px"
+                        class="overflow-y-auto grey lighten-3"
+                        >
+                            <v-list-item
+                                    v-for="land in i.lands"
+                                    :key="land.id"
+                                    @click=""
+                            >
+
+                                <v-list-item-content>
+                                    <!--<v-list-item-title>-->
+                                    <!--<div>{{i.lands.indexOf(land)}} {{i.lands.length}}</div>-->
+                                        <div>Province: {{land["province"]}}</div>
+                                        <div v-if="land.amphur">Amphur: {{land["amphur"]}}</div>
+                                        <div v-if="land.district">District: {{land["district"]}}</div>
+                                        <div>Land No.: {{land["landNo"]}}</div>
+
+                                    <v-divider
+                                        v-if="i.lands.indexOf(land)+1!== i.lands.length"
+                                    ></v-divider>
+                                    <!--</v-list-item-title>-->
+                                </v-list-item-content>
+
+
+                            </v-list-item>
+                        </v-list>
+
+                        <v-divider
+                                class="mx-4"
+                        ></v-divider>
                             <!--</v-container>-->
                         <!--</v-card-text>-->
                         <v-card-actions>
@@ -43,8 +70,6 @@
                         </v-card-actions>
 
                     </v-card>
-
-
 
                 </v-col>
             </v-row>
@@ -67,8 +92,8 @@
                     <div>Status: {{modal.content[1]}}</div>
                     <div>Approval: {{modal.content[2]}}</div>
                     <div>Address: {{modal.content[3]}}</div>
-                    <div>Data on block: {{modal.content[4]}}</div>
-                    <div>Data on modal: {{modal.itemHash}}</div>
+                    <div>Data on display: {{modal.itemHash}}</div>
+                    <div>Data on blockchain: {{modal.content[4]}}</div>
                     <div>Hash: {{modal.content[5]}}</div>
                 </v-content>
 
@@ -78,10 +103,7 @@
                     <v-spacer></v-spacer>
 
                     <v-btn
-                            color="green darken-1"
-                            text
                             @click="modal.open = false"
-
                     >
                         Close
                     </v-btn>
@@ -107,6 +129,7 @@
                 content: null,
                 itemHash: "",
                 loading: true,
+                offsetTop: 0,
             },
         }),
         mounted() {
@@ -129,6 +152,9 @@
             }
         },
         methods:{
+            onScroll (e) {
+                this.offsetTop = e.target.scrollTop
+            },
             checkRequest: function(rid, modal, item){
                 modal.loading = true
                 this.modal.itemHash = sha256(JSON.stringify(item))
@@ -140,7 +166,6 @@
                         .checkRequest(parseInt(rid))
                         .call()
                         .then(function (result) {
-                            console.log(result);
                             modal.content = result;
                             modal.loading = false;
                          })

@@ -99,13 +99,21 @@
                             v-model="key"
                             type="password"
                     />
-                    <v-btn color="success" dark large
-                    @click="send">
+
+                    <v-btn
+                            color="success"
+                            large
+                            :disabled="modal.loading"
+                            :loading="modal.loading"
+                            @click="send"
+                    >
                         Send
                     </v-btn>
+
                 </v-col>
             </v-row>
         </v-container>
+
     </v-content>
 </template>
 
@@ -127,6 +135,12 @@
                 },
             ],
             key: "",
+            modal: {
+                open: false,
+                loading: false,
+                message: "",
+
+            }
         }),
         beforeCreate () {
         },
@@ -136,16 +150,18 @@
             },
         },
         methods: {
-            signAndSendTransaction: function (web3, uid, out, account, transaction) {
+            signAndSendTransaction: function (web3, uid, out, modal, account, transaction) {
                 return account.signTransaction(transaction).then( function (results) {
                     if ('rawTransaction' in results) {
                         web3.eth.sendSignedTransaction(results.rawTransaction).then(function (receipt) {
+                            modal.loading = false
+                            modal.message = "Request sent!"
                             var id = parseInt("0x" + receipt.logs[1].data.slice(64+2));
                             firebase.database().ref('users/' + uid + '/requests/').child(id.toString()).set(out)
                         }).catch(console.error);
                     } else {
-                        // contractAddress.value = "Cannot find rawTransaction in results";
-                        // contractAddress.isDeploying = false;
+                        modal.loading = false
+                        modal.message = "Error: Cannot find rawTransaction in results";
                     }
 
                 })
@@ -163,6 +179,8 @@
                 },)
             },
             send: function (){
+                this.modal.open = true
+                this.modal.loading = true
                 let out = {
                     companyReason: this.companyReason,
                     lands: this.items,
@@ -175,7 +193,7 @@
                     const contract = new web3.eth.Contract(web3const.ABI, web3const.CONTRACTADDRESS);
                     const gasPrice = (30000).toString();
                     var encodedABI = contract.methods.sendRequest(sha, "unknown").encodeABI();
-                    this.signAndSendTransaction(web3, this.uid, out, account, {
+                    this.signAndSendTransaction(web3, this.uid, out, this.modal, account, {
                         from: account.address,
                         to: web3const.CONTRACTADDRESS,
                         value: gasPrice,
