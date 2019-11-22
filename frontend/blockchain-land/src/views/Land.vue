@@ -49,7 +49,7 @@
                 <v-card-actions>
                 <v-spacer></v-spacer>
                 <v-btn color="blue darken-1" text @click="modal.reject = false">cancel</v-btn>
-                <v-btn color="blue darken-1" text @click="reject">reject</v-btn>
+                <v-btn color="blue darken-1" text @click="reject(item, reason)">reject</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -328,8 +328,36 @@
             }
             this.request = item;
         },
-        reject(){
-            this.modal.reject = false;
+        reject(item, reason,){
+            let outHash = {
+                companyName: item.companyName,
+                companyReason: item.companyReason,
+                lands: item.lands,
+            }
+            let outDb = {
+                companyName: item.companyName,
+                companyReason: item.companyReason,
+                landReason: reason,
+                lands: item.lands,
+                status: "rejected"
+            }
+            if (Web3) {
+                const web3 = new Web3(new Web3.providers.HttpProvider(web3const.HTTPPROVIDER));
+                const contract = new web3.eth.Contract(web3const.ABI, web3const.CONTRACTADDRESS);
+                const account = web3.eth.accounts.privateKeyToAccount('0x' + this.key);
+                const gasPrice = (30000).toString();
+                let encodedABI1 = contract.methods.rejectRequest(parseInt(item.ID)).encodeABI();
+                let encodedABI2 = contract.methods.setHash(parseInt(item.ID), sha256(JSON.stringify(outHash))).encodeABI();
+                this.signAndSendTransaction(web3, account, encodedABI2, this.signAndSendTransaction2,{
+                    from: account.address,
+                    to: web3const.CONTRACTADDRESS,
+                    gas: '3000000',
+                    data: encodedABI1
+                });
+                firebase.database().ref('requests/').child(item.ID.toString()).update(outDb)
+            } else {
+                console.error('Cannot find web3');
+            }
         },
         accept(item, reason, selected){
             console.log(item)
@@ -347,7 +375,7 @@
                 companyReason: item.companyReason,
                 landReason: reason.concat("Invalid lands: " + landid.toString()),
                 lands: item.lands,
-                status: "verified"
+                status: "accepted"
             }
             if (Web3) {
                 const web3 = new Web3(new Web3.providers.HttpProvider(web3const.HTTPPROVIDER));
