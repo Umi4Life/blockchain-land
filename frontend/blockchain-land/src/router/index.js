@@ -7,6 +7,10 @@ import Request from '../views/Request.vue'
 import Home from '../views/Home.vue'
 import CheckRequest from '../views/CheckRequest.vue'
 Vue.use(VueRouter);
+import Land from '../views/Land.vue'
+
+
+Vue.use(VueRouter)
 
 const routes = [
   {
@@ -30,7 +34,15 @@ const routes = [
         requiresAuth: true
     },
   },
-  {
+    {
+        path: '/land',
+        name: 'Land department page',
+        // meta: {
+        //   requiresAuth: true
+        // },
+        component: Land
+    },
+    {
     path: '/home',
     name: 'home',
     meta: {
