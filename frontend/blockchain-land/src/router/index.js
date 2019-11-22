@@ -5,21 +5,26 @@ import firebase from 'firebase'
 import Login from '../views/Login.vue'
 import Request from '../views/Request.vue'
 import Home from '../views/Home.vue'
+import CheckRequest from '../views/CheckRequest.vue'
 Vue.use(VueRouter);
+import Land from '../views/Land.vue'
+
+
+Vue.use(VueRouter)
 
 const routes = [
   {
     path: '*',
-    redirect: '/login'
+    redirect: '/home',
   },
   {
     path: '/',
-    redirect: '/login'
+    redirect: '/home'
   },
   {
     path: '/login',
     name: 'login',
-    component: Login
+    component: Login,
   },
   {
     path: '/request',
@@ -29,14 +34,31 @@ const routes = [
         requiresAuth: true
     },
   },
-  {
+    {
+        path: '/land',
+        name: 'Land department page',
+        // meta: {
+        //   requiresAuth: true
+        // },
+        component: Land
+    },
+    {
     path: '/home',
     name: 'home',
     meta: {
       requiresAuth: true
     },
-    component: Home
+    component: Home,
+  },
+  {
+      path: '/checkRequest',
+      name: 'checkRequest',
+      meta: {
+          requiresAuth: true
+      },
+      component: CheckRequest,
   }
+
 ]
 
 const router = new VueRouter({

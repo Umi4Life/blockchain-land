@@ -67,6 +67,7 @@
                             </v-form>
                         </v-card-text>
 
+
                     </v-card>
 
 
@@ -98,13 +99,21 @@
                             v-model="key"
                             type="password"
                     />
-                    <v-btn color="success" dark large
-                    @click="send">
+
+                    <v-btn
+                            color="success"
+                            large
+                            :disabled="modal.loading"
+                            :loading="modal.loading"
+                            @click="send"
+                    >
                         Send
                     </v-btn>
+
                 </v-col>
             </v-row>
         </v-container>
+
     </v-content>
 </template>
 
@@ -126,6 +135,12 @@
                 },
             ],
             key: "",
+            modal: {
+                open: false,
+                loading: false,
+                message: "",
+
+            }
         }),
         beforeCreate () {
         },
@@ -135,17 +150,18 @@
             },
         },
         methods: {
-            signAndSendTransaction: function (web3, account, transaction) {
+            signAndSendTransaction: function (web3, uid, out, modal, account, transaction) {
                 return account.signTransaction(transaction).then( function (results) {
                     if ('rawTransaction' in results) {
                         web3.eth.sendSignedTransaction(results.rawTransaction).then(function (receipt) {
-                            console.log(receipt)
-                            // contractAddress.value = receipt.contractAddress;
-                            // contractAddress.isDeploying = false;
+                            modal.loading = false
+                            modal.message = "Request sent!"
+                            var id = parseInt("0x" + receipt.logs[1].data.slice(64+2));
+                            firebase.database().ref('users/' + uid + '/requests/').child(id.toString()).set(out)
                         }).catch(console.error);
                     } else {
-                        // contractAddress.value = "Cannot find rawTransaction in results";
-                        // contractAddress.isDeploying = false;
+                        modal.loading = false
+                        modal.message = "Error: Cannot find rawTransaction in results";
                     }
 
                 })
@@ -163,25 +179,25 @@
                 },)
             },
             send: function (){
+                this.modal.open = true
+                this.modal.loading = true
                 let out = {
                     companyReason: this.companyReason,
                     lands: this.items,
                     status: "unverified"
                 }
-                const id = Math.floor(Math.random() * (Math.pow(2,64)+1)).toString();
-
                 let sha = sha256(JSON.stringify(out))
-                firebase.database().ref('users/' + this.uid + '/requests/').child(id).set(out)
-
                 if(Web3){
                     const web3 = new Web3(new Web3.providers.HttpProvider(web3const.HTTPPROVIDER));
                     const account = web3.eth.accounts.privateKeyToAccount('0x' + this.key);
                     const contract = new web3.eth.Contract(web3const.ABI, web3const.CONTRACTADDRESS);
-                    var encodedABI = contract.methods.sendRequest(sha).encodeABI();
-                    this.signAndSendTransaction(web3, account, {
-                        from: "0x2B81009886091E1e0B66e7D292cde3De882015B5",
+                    const gasPrice = (30000).toString();
+                    var encodedABI = contract.methods.sendRequest(sha, "unknown").encodeABI();
+                    this.signAndSendTransaction(web3, this.uid, out, this.modal, account, {
+                        from: account.address,
                         to: web3const.CONTRACTADDRESS,
-                        gas: '30000',
+                        value: gasPrice,
+                        gas: '3000000',
                         data: encodedABI
                     });
 
