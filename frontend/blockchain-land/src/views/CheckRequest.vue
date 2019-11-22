@@ -62,7 +62,7 @@
                         <!--</v-card-text>-->
                         <v-card-actions>
                             <v-spacer />
-                            <v-btn @click="checkRequest(j, modal, i)" @click.stop="modal.open=true">Check Request</v-btn>
+                            <v-btn @click="checkRequest(j, modal, i, hashCorrect)" @click.stop="modal.open=true">Check Request</v-btn>
                         </v-card-actions>
 
                     </v-card>
@@ -99,9 +99,11 @@
                         <div>Status: {{modal.content[1]}}</div>
                         <div>Approval: {{modal.content[2]}}</div>
                         <div>Address: {{modal.content[3]}}</div>
-                        <div>Data on display: {{modal.itemHash}}</div>
-                        <div>Data on blockchain: {{modal.content[4]}}</div>
-                        <div>Hash: {{modal.content[5]}}</div>
+                        <div v-if="modal.itemHash===modal.content[4]" class="green--text">Hash: Correct</div>
+                        <div v-else class="red--text">Hash: Incorrect</div>
+                        <!--<div>Data on displaying: {{modal.itemHash}}</div>-->
+                        <!--<div>Data on blockchain: {{modal.content[4]}}</div>-->
+                        <!--<div>Hash: {{modal.content[5]}}</div>-->
                     </v-card-text>
                 </div>
 
@@ -139,12 +141,28 @@
                 loading: true,
                 offsetTop: 0,
             },
+            hashCorrect: false,
         }),
         mounted() {
-            firebase.database().ref('users/' + this.uid + '/requests/').on("value", (snapshot) => {
-                console.log(snapshot.val())
-                this.items = snapshot.val();
-            });
+            var rid = null;
+            firebase.database().ref('users/' + this.uid + '/requests/')
+                .on("value", (snapshot) => {
+                console.log(Object.values(snapshot.val()))
+                rid = Object.values(snapshot.val())
+                firebase.database().ref('requests')
+                    .on("value", (snapshot) => {
+                        console.log(snapshot.val())
+                        const filtered = Object.keys(snapshot.val())
+                            .filter(key => rid.includes(key))
+                            .reduce((obj, key) => {
+                                obj[key] = snapshot.val()[key];
+                                return obj;
+                            }, {});
+                        this.items = filtered
+                    })
+
+                })
+            ;
         },
         watch: {
             modal() {
@@ -164,8 +182,15 @@
                 this.offsetTop = e.target.scrollTop
             },
             checkRequest: function(rid, modal, item){
+                console.log(JSON.stringify(item))
+                this.item = item
                 modal.loading = true
-                this.modal.itemHash = sha256(JSON.stringify(item))
+                this.modal.itemHash = sha256(JSON.stringify({
+                    companyName: item.companyName,
+                    companyReason: item.companyReason,
+                    lands: item.lands,
+                }))
+                console.log(this.modal.itemHash)
                 if (Web3) {
                     const web3 = new Web3(new Web3.providers.HttpProvider(web3const.HTTPPROVIDER));
                     const contract = new web3.eth.Contract(web3const.ABI, web3const.CONTRACTADDRESS);
