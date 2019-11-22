@@ -3,7 +3,7 @@ pragma solidity ^0.5.0;
 import "./Context.sol";
 import "./IERC20.sol";
 import "./SafeMath.sol";
-
+import "./DLToken_Interface.sol";
 
 /**
  * @dev Implementation of the {IERC20} interface.
@@ -28,31 +28,42 @@ import "./SafeMath.sol";
  * Finally, the non-standard {decreaseAllowance} and {increaseAllowance}
  * functions have been added to mitigate the well-known issues around setting
  * allowances. See {IERC20-approve}.
+ *
+ * Also, this contract implement {DLToken_Interface}.
+ * This contract is a part of the ICCS487 projects.
  */
-contract DLToken is Context, IERC20 {
+contract DLToken is Context, IERC20, DLToken_Interface {
     using SafeMath for uint256;
     using SafeMath for uint64; //Added this library for RID
-    
     mapping (address => uint256) private _balances;
     mapping (address => mapping (address => uint256)) private _allowances;
-
-    uint256 private _totalSupply;
+    mapping (uint64 => address) private _companyAddress;
     address private _minter;
-
+    uint256 private _totalSupply;
+    uint256 private _costWei; //fee for requesting
+    uint256 private _costToken; //fee for requesting
+    uint64 private _RIDglobal; //RID tracker
+    address payable _LDaddress;
+    modifier onlyLD() {
+        require(isLD(), "Only Land Department of Land has permission to do this");
+        _;
+    }
+    function isLD() public view returns(bool) {
+        return _msgSender() == _minter;
+    }
+    RequestForLand[] public requests;
     /**
      * @dev See {IERC20-totalSupply}.
      */
     function totalSupply() public view returns (uint256) {
         return _totalSupply;
     }
-
     /**
      * @dev See {IERC20-balanceOf}.
      */
     function balanceOf(address account) public view returns (uint256) {
         return _balances[account];
     }
-
     /**
      * @dev See {IERC20-transfer}.
      *
@@ -144,7 +155,62 @@ contract DLToken is Context, IERC20 {
         _approve(_msgSender(), spender, _allowances[_msgSender()][spender].sub(subtractedValue));
         return true;
     }
-
+    /**
+        @dev Read more in the DL_Interface
+    */
+    function acceptRequest(uint64 RID) public payable onlyLD {
+        require(checkContractBalance() >= _costWei, "Not enough wei on this contract to pay back.");
+        require(_getRequestStatus(RID) == false, "Request has been decided.");
+        _setRequestStatus(RID, true);
+        _setRequestApproval(RID, true);
+        _transfer(address(this), _minter, _costToken); // transfer money from dapp to LD
+        _LDaddress.transfer(_costWei);
+        emit DecisionOnRequest(RID, _getRequestStatus(RID), _getRequestApproval(RID));
+    }
+    /**
+        @dev Read more in the DL_Interface
+    */
+    function sendRequest(string memory encryptedData, string memory docHash) public payable returns (uint64){
+        require(balanceOf(_msgSender()) >= _costToken, 'Not enough tokens in your account');
+        require(msg.value == _costWei, 'The amount of wei is incorrect.');
+        transfer(address(this), _costToken);
+        _companyAddress[_RIDglobal] = _msgSender();
+        requests.push(RequestForLand(_RIDglobal, false, false, _msgSender(), encryptedData, docHash));
+        emit RequestSent(_msgSender(), _minter, _costToken,_RIDglobal);
+        _RIDglobal += 1;
+        return _RIDglobal-1;
+    }
+    /**
+        @dev Read more in the DL_Interface
+    */
+    function rejectRequest(uint64 RID) public payable onlyLD {
+        require(checkContractBalance() >= _costWei, "Not enough wei on this contract to pay back.");
+        require(_getRequestStatus(RID) == false, "Request has been decided.");
+        _setRequestStatus(RID, true);
+        _setRequestApproval(RID, false);
+        _transfer(address(this), requests[RID].companyAddress, _costToken);
+        _LDaddress.transfer(_costWei);
+        emit DecisionOnRequest(RID, _getRequestStatus(RID), _getRequestApproval(RID));
+    }
+    /**
+        @dev Read more in the DL_Interface
+    */
+    function checkRequest(uint64 RID) public view returns (uint64, bool, bool, address, string memory, string memory){
+        return (RID,  _getRequestStatus(RID), _getRequestApproval(RID), _getRequestAddress(RID),  _getRequestData(RID), _getRequestHash(RID));
+    }
+    /**
+        @dev Read more in the DL_Interface
+    */
+    function setHash(uint64 RID, string memory toSet) public onlyLD {
+        require(_getRequestApproval(RID) == true, "This request is not approved.");
+        _setHash(RID, toSet);
+    }
+    /**
+        @dev Read more in the DL_Interface
+    */
+    function checkContractBalance() public view returns (uint256){
+        return address(this).balance;
+    }
     /**
      * @dev Moves tokens `amount` from `sender` to `recipient`.
      *
@@ -235,112 +301,42 @@ contract DLToken is Context, IERC20 {
         _burn(account, amount);
         _approve(account, _msgSender(), _allowances[account][_msgSender()].sub(amount));
     }
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//Parm : We will start working here and leave ERC20 original code above. (I may make a new .sol to inherit it later)
-    struct RequestForLand { // Struct for request
-        uint64 RID;
-        bool status;
-        bool approval;
-        address companyAddress;
-        string encryptedData;
-        string docHash;
+    function _burnContract() private onlyLD{
+        require(checkContractBalance() >= _costWei, "Not enough wei on this contract to burn.");
+        address(0x0).transfer(_costWei); //proof of burn
     }
-
-    uint256 private _costWei; //fee for requesting
-    uint256 private _costToken; //fee for requesting
-    uint64 private _RIDglobal; //RID tracker
-    mapping (uint64 => address) private _companyAddress;
-    address payable _LDaddress;
-    modifier onlyLD() {
-        require(isLD(), "Only Land Department of Land has permission to do this");
-        _;
-    }
-    function isLD() public view returns(bool) {
-        return _msgSender() == _minter;
-    }
-    
-    RequestForLand[] public requests; //This is where all requests are stored
-    event RequestSent(address indexed from, address indexed to, uint256 value, uint64 RID);
-
-    function sendRequest(string memory encryptedData, string memory docHash) public payable returns (uint64){ //You should put ether in it
-        require(msg.value == _costWei  && balanceOf(_msgSender()) >= _costToken, 'Buy some tokens or ether first!');
-
-        transfer(address(this), _costToken);
-        _companyAddress[_RIDglobal] = _msgSender();
-        requests.push(RequestForLand(_RIDglobal, false, false, _msgSender(), encryptedData, docHash)); //assume that RID is 0 at first
-        emit RequestSent(_msgSender(), _minter, _costToken,_RIDglobal);
-        _RIDglobal+=1;
-        return _RIDglobal-1;
-    }
-    function checkRequest(uint64 RID) public view returns (uint64, bool, bool, address, string memory, string memory){ //Read from the memory
-        return (RID,  _getRequestStatus(RID), _getRequestApproval(RID), _getRequestAddress(RID),  _getRequestData(RID), _getRequestHash(RID));
-    }
-    
     function _getRequestHash(uint64 RID) private view returns (string memory){
-        require(RID < _RIDglobal);
+        require(RID < _RIDglobal, "Your RID is incorrect.");
         return requests[RID].docHash;
     }
 
     function _getRequestApproval(uint64 RID) private view returns (bool){
-        require(RID < _RIDglobal);
+        require(RID < _RIDglobal, "Your RID is incorrect.");
         return requests[RID].approval;
     }
-
     function _getRequestAddress(uint64 RID) private view returns (address){
-        require(RID < _RIDglobal);
+        require(RID < _RIDglobal, "Your RID is incorrect.");
         return requests[RID].companyAddress;
     }
     function _getRequestStatus(uint64 RID) private view returns (bool){
-        require(RID < _RIDglobal);
-        return requests[RID].status; 
+        require(RID < _RIDglobal, "Your RID is incorrect.");
+        return requests[RID].status;
     }
-    function _getRequestData(uint64 RID) private view returns ( string memory){
-        require(RID < _RIDglobal);
-        return requests[RID].encryptedData; 
+    function _getRequestData(uint64 RID) private view returns (string memory){
+        require(RID < _RIDglobal, "Your RID is incorrect.");
+        return requests[RID].encryptedData;
     }
-    
     function _setRequestStatus(uint64 RID, bool toSet) private onlyLD {
-        require(RID < _RIDglobal);
+        require(RID < _RIDglobal, "Your RID is incorrect.");
         requests[RID].status = toSet; //set request status
     }
     function _setRequestApproval(uint64 RID, bool decision) private onlyLD{
-        require(RID < _RIDglobal);
+        require(RID < _RIDglobal, "Your RID is incorrect.");
         requests[RID].approval = decision;
     }
     function _setHash(uint64 RID, string memory setHash) private onlyLD {
-        require(RID < _RIDglobal);
+        require(RID < _RIDglobal, "Your RID is incorrect.");
         requests[RID].docHash = setHash;
-    }
-
-    function setHash(uint64 RID, string memory toSet) public onlyLD {
-        require(_getRequestApproval(RID) == true);
-        _setHash(RID, toSet);
-    }
-
-    function acceptRequest(uint64 RID) public payable onlyLD {
-        require(address(this).balance >= _costWei, "Not enough wei on this contract to pay back.");
-        require(_getRequestStatus(RID) == false, "Request has been decided.");
-        _setRequestStatus(RID, true);
-        _setRequestApproval(RID, true);
-        _transfer(address(this), _minter, _costToken); // transfer money from dapp to LD
-        _LDaddress.transfer(_costWei);
-    }
-
-    function _rejectRequest(uint64 RID) public payable onlyLD {
-        require(address(this).balance >= _costWei, "Not enough wei on this contract to pay back.");
-        require(_getRequestStatus(RID) == false, "Request has been decided.");        
-        _setRequestStatus(RID, true);
-        _setRequestApproval(RID, false);
-        _transfer(address(this), requests[RID].companyAddress, _costToken); // transfer money from dapp to company
-        _LDaddress.transfer(_costWei);
-    }
-
-    function _burnContract() private onlyLD{
-        require(checkContractBalance()>=_costWei);
-        address(0x0).transfer(_costWei); //proof of burn
-    }
-    function checkContractBalance() public view returns (uint256){
-        return address(this).balance; //return how much ether contract contain
     }
 
     constructor () public{ //use when deploy
