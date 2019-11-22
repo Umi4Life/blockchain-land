@@ -42,7 +42,7 @@
             </v-card-text>
             <v-card-actions>
               <v-spacer />
-              <v-btn color="primary" @click="login">Login</v-btn>
+              <v-btn color="primary" @click="login(email, password)">Login</v-btn>
             </v-card-actions>
           </v-card>
         </v-col>
@@ -53,6 +53,8 @@
 
 <script>
 import firebase from 'firebase'
+import router from '../router/index'
+import store from '../store/index'
 export default {
   name: 'login',
   props: {
@@ -64,24 +66,27 @@ export default {
       password:'111111',
   }),
   methods: {
-      login: function (){
-          firebase.auth().signInWithEmailAndPassword(this.email, this.password).then(
-              function(user){
-                  let val = null;
-                  let ref = firebase.database().ref("users/"+user.user.uid+"/userType");
-                  ref.on("value", function(snapshot) {
-                      val = snapshot.val();
-                      alert(user.user.uid + '\n' + val)
-                  }, function (errorObject) {
-                      alert(errorObject.code);
-                  });
+      login: function (email, password){
+          store.commit('setLoading', true);
+          firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+              .then(function(){
+                  return firebase.auth().signInWithEmailAndPassword(email, password)
+                      .then(function(user){
+                              const ref = firebase.database().ref('users/' + user.user.uid)
+                              store.commit('setUid', user.user.uid);
+                              ref.on('value', function (snapshot) {
+                                  if(snapshot.val()['userType'] === 'company') router.replace('home')
+                                  store.commit('setLoading', false);
+                              });
 
-                  alert(user.user.uid + '\n' + val)
-              },
-              function(err){
-                alert(err.message)
-              }
-          )
+
+                          },
+                          function(err){
+                              alert(err.message)
+                          }
+                      )
+              })
+
       }
   }
 };

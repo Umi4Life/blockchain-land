@@ -5,9 +5,13 @@
                 color="cyan"
                 dark
         >
+            <v-toolbar-title>Blockchain Land</v-toolbar-title>
             <v-spacer />
-
-            <v-toolbar-title>Application</v-toolbar-title>
+            <v-divider vertical></v-divider>
+            <v-btn v-if="authed" @click="home()" text>Home</v-btn>
+            <v-divider vertical></v-divider>
+            <v-btn @click="signOut()" v-if="authed" text>Logout</v-btn>
+            <v-divider vertical></v-divider>
 
         </v-app-bar>
 
@@ -29,7 +33,8 @@
                             <!--<router-link to="/login">Login</router-link> |-->
                             <!--<router-link to="/about">About</router-link>-->
                         <!--</div>-->
-                        <router-view/>
+                        <h1 v-if="loading"> <v-progress-circular indeterminate/></h1>
+                        <router-view v-else :size="200"/>
 
 
 
@@ -53,6 +58,9 @@
 </template>
 
 <script>
+    import firebase from "firebase"
+    import router from "./router/index"
+    import store from "./store/index"
     export default {
         name: 'app',
         components: {
@@ -62,5 +70,27 @@
         },
         data: () => ({
         }),
+        computed: {
+            loading () {
+                return store.getters.getLoading
+            },
+            authed(){
+                return firebase.auth().currentUser
+            }
+        },
+        methods:{
+            home: function() {
+                router.replace("/home")
+            },
+            signOut: function (){
+                store.commit('setLoading', true);
+                firebase.auth().signOut()
+                    .then(function(){
+                        router.replace('/')
+                        store.commit('setLoading', false);
+
+                    })
+            }
+        }
     }
 </script>
