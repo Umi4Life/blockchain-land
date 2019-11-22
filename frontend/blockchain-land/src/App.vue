@@ -10,7 +10,7 @@
             <v-divider vertical></v-divider>
             <v-btn v-if="authed" @click="home()" text>Home</v-btn>
             <v-divider vertical></v-divider>
-            <v-btn @click="signOut()" v-if="authed" text>Logout</v-btn>
+            <v-btn v-if="authed" @click="signOut()" text>Logout</v-btn>
             <v-divider vertical></v-divider>
 
         </v-app-bar>
@@ -75,7 +75,7 @@
                 return store.getters.getLoading
             },
             authed(){
-                return firebase.auth().currentUser
+                return store.getters.getUid
             }
         },
         methods:{

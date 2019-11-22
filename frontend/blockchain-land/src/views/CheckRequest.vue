@@ -58,10 +58,6 @@
 
                             </v-list-item>
                         </v-list>
-
-                        <v-divider
-                                class="mx-4"
-                        ></v-divider>
                             <!--</v-container>-->
                         <!--</v-card-text>-->
                         <v-card-actions>
@@ -79,23 +75,35 @@
                 persistent
         >
             <v-card>
-                <!--<v-card-title class="headline">Use Google's location service?</v-card-title>-->
-
-                <!--<v-card-text>-->
-                    <!--Let Google help apps determine location. This means sending anonymous location data to Google, even when no apps are running.-->
-                <!--</v-card-text>-->
-                <v-content v-if="modal.loading===true">
-                    <v-progress-circular indeterminate/>
-                </v-content>
-                <v-content v-else>
-                    <div>RID: {{modal.content[0]}}</div>
-                    <div>Status: {{modal.content[1]}}</div>
-                    <div>Approval: {{modal.content[2]}}</div>
-                    <div>Address: {{modal.content[3]}}</div>
-                    <div>Data on display: {{modal.itemHash}}</div>
-                    <div>Data on blockchain: {{modal.content[4]}}</div>
-                    <div>Hash: {{modal.content[5]}}</div>
-                </v-content>
+                <v-container
+                        v-if="modal.loading===true"
+                >
+                    <v-row
+                            align="center"
+                    >
+                        <v-col class="text-center">
+                            <h1> <v-progress-circular indeterminate/></h1>
+                        </v-col>
+                    </v-row>
+                </v-container>
+                <div v-else>
+                    <v-toolbar
+                            color="primary"
+                            dark
+                            flat
+                    >
+                        <v-toolbar-title>RID: {{modal.content[0]}}</v-toolbar-title>
+                        <v-spacer />
+                    </v-toolbar>
+                    <v-card-text class="title text-left black--text">
+                        <div>Status: {{modal.content[1]}}</div>
+                        <div>Approval: {{modal.content[2]}}</div>
+                        <div>Address: {{modal.content[3]}}</div>
+                        <div>Data on display: {{modal.itemHash}}</div>
+                        <div>Data on blockchain: {{modal.content[4]}}</div>
+                        <div>Hash: {{modal.content[5]}}</div>
+                    </v-card-text>
+                </div>
 
 
 
