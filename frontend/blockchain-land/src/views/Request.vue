@@ -157,7 +157,8 @@
                             modal.loading = false
                             modal.message = "Request sent!"
                             var id = parseInt("0x" + receipt.logs[1].data.slice(64+2));
-                            firebase.database().ref('users/' + uid + '/requests/').child(id.toString()).set(out)
+                            firebase.database().ref('requests/').child(id.toString()).set(out)
+                            firebase.database().ref('users/' + uid).child('/requests/').push(id.toString())
                         }).catch(console.error);
                     } else {
                         modal.loading = false
@@ -181,19 +182,25 @@
             send: function (){
                 this.modal.open = true
                 this.modal.loading = true
-                let out = {
+                let outHash = {
+                    companyName: store.getters.getCompanyName,
+                    companyReason: this.companyReason,
+                    lands: this.items,
+                }
+                let outDb ={
+                    companyName: store.getters.getCompanyName,
                     companyReason: this.companyReason,
                     lands: this.items,
                     status: "unverified"
                 }
-                let sha = sha256(JSON.stringify(out))
+                let sha = sha256(JSON.stringify(outHash))
                 if(Web3){
                     const web3 = new Web3(new Web3.providers.HttpProvider(web3const.HTTPPROVIDER));
                     const account = web3.eth.accounts.privateKeyToAccount('0x' + this.key);
                     const contract = new web3.eth.Contract(web3const.ABI, web3const.CONTRACTADDRESS);
                     const gasPrice = (30000).toString();
                     var encodedABI = contract.methods.sendRequest(sha, "unknown").encodeABI();
-                    this.signAndSendTransaction(web3, this.uid, out, this.modal, account, {
+                    this.signAndSendTransaction(web3, this.uid, outDb, this.modal, account, {
                         from: account.address,
                         to: web3const.CONTRACTADDRESS,
                         value: gasPrice,

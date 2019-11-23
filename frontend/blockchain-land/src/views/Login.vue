@@ -75,8 +75,15 @@ export default {
                               const ref = firebase.database().ref('users/' + user.user.uid)
                               store.commit('setUid', user.user.uid);
                               ref.on('value', function (snapshot) {
-                                  if(snapshot.val()['userType'] === 'company') router.replace('home')
+                                  if(snapshot.val()['userType'] === 'company') {
+                                      store.commit('setCompanyName', snapshot.val()['name']);
+                                      router.replace('home')
+                                  }
+                                  else{
+                                      router.replace('land')
+                                  }
                                   store.commit('setLoading', false);
+
                               });
 
 

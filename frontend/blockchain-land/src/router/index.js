@@ -36,10 +36,10 @@ const routes = [
   },
     {
         path: '/land',
-        name: 'Land department page',
-        // meta: {
-        //   requiresAuth: true
-        // },
+        name: 'land',
+        meta: {
+          requiresAuth: true
+        },
         component: Land
     },
     {
