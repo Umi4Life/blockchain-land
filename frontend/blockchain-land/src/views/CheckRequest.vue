@@ -27,7 +27,9 @@
                         <v-card-text class="title text-left black--text">
                             <div>Reason:  {{i["companyReason"]}}</div>
                             <div>Status: {{i["status"]}}</div>
+                            <div>Notes: {{i["landReason"]}}</div>
                             <div>Lands: </div>
+
                         </v-card-text>
 
 
@@ -154,6 +156,7 @@
                         console.log(snapshot.val())
                         const filtered = Object.keys(snapshot.val())
                             .filter(key => rid.includes(key))
+                            .reverse()
                             .reduce((obj, key) => {
                                 obj[key] = snapshot.val()[key];
                                 return obj;
@@ -199,6 +202,7 @@
                         .checkRequest(parseInt(rid))
                         .call()
                         .then(function (result) {
+                            console.log(result)
                             modal.content = result;
                             modal.loading = false;
                          })

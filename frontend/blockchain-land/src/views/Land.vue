@@ -13,11 +13,24 @@
             </template>
         </v-data-table>
         <!-- Reject modal -->
-        <v-dialog v-model="modal.reject" persistent max-width="600px">
+        <v-dialog v-model="modal.reject" max-width="600px">
             <v-card>
-            <v-card-title>
-            <span class="headline">Reject Request</span>
-            </v-card-title>
+                <v-card-title>
+                    <span class="headline">Reject Request</span>
+                </v-card-title>
+            <v-container
+                    v-if="modal.loading===true"
+            >
+                <v-row
+                        align="center"
+                >
+                    <v-col class="text-center">
+                        <h1> <v-progress-circular indeterminate/></h1>
+                    </v-col>
+                </v-row>
+            </v-container>
+
+                <v-content v-else>
                 <v-card-text>
                     <!-- request info -->
                     <v-card
@@ -45,20 +58,42 @@
                             shaped
                         ></v-text-field>
                     </v-col>
+                    <v-col cols="24">
+                        <v-text-field
+                                type="password"
+                                label="key"
+                                outlined
+                                shaped
+                                v-model="key"
+                        ></v-text-field>
+                    </v-col>
                 </v-card-text>
                 <v-card-actions>
                 <v-spacer></v-spacer>
                 <v-btn color="blue darken-1" text @click="modal.reject = false">cancel</v-btn>
-                <v-btn color="blue darken-1" text @click="reject(item, reason)">reject</v-btn>
+                <v-btn color="blue darken-1" text @click="reject(item, reason, modal)">reject</v-btn>
                 </v-card-actions>
+                </v-content>
             </v-card>
         </v-dialog>
         <!-- Accept Modal -->
-        <v-dialog v-model="modal.accept" persistent max-width="600px">
+        <v-dialog v-model="modal.accept" max-width="600px">
             <v-card>
             <v-card-title>
             <span class="headline">Accept Request</span>
             </v-card-title>
+                <v-container
+                        v-if="modal.loading===true"
+                >
+                    <v-row
+                            align="center"
+                    >
+                        <v-col class="text-center">
+                            <h1> <v-progress-circular indeterminate/></h1>
+                        </v-col>
+                    </v-row>
+                </v-container>
+                <v-content v-else>
                 <v-card-text>
                     <!-- request info -->
                     <v-card
@@ -107,6 +142,7 @@
                     </v-col>
                     <v-col cols="24">
                         <v-text-field
+                                type="password"
                                 label="key"
                                 outlined
                                 shaped
@@ -117,8 +153,9 @@
                 <v-card-actions>
                 <v-spacer></v-spacer>
                 <v-btn color="blue darken-1" text @click="modal.accept = false">cancel</v-btn>
-                <v-btn color="blue darken-1" text @click="accept(item, reason, selected)">accept</v-btn>
+                <v-btn color="blue darken-1" text @click="accept(item, reason, selected, modal)">accept</v-btn>
                 </v-card-actions>
+                </v-content>
             </v-card>
         </v-dialog>
 
@@ -142,6 +179,7 @@
         modal:{
             accept: false,
             reject: false,
+            loading: false,
         },
         request: {
                 ID: '123',
@@ -207,22 +245,18 @@
       mounted() {
           firebase.database().ref('/requests/').on("value", (snapshot) => {
               let requests = []
-              // for(let i in snapshot.val()){
-              //     console.log(snapshot.val()[i])
-              //     requests.push(snapshot.val()[i)
-              // }
-              // console.log(this.requests)
-              // console.log(requests)
-              // this.requests = requests;
               Object.keys(snapshot.val()).forEach(key => {
-                  requests.push({
-                      ID: key,
-                      companyName: snapshot.val()[key].companyName,
-                      companyReason: snapshot.val()[key].companyReason,
-                      status: snapshot.val()[key].status,
-                      lands: snapshot.val()[key].lands,
+                  if(snapshot.val()[key].status === "pending..."){
+                      requests.push({
+                          ID: key,
+                          companyName: snapshot.val()[key].companyName,
+                          companyReason: snapshot.val()[key].companyReason,
+                          status: snapshot.val()[key].status,
+                          lands: snapshot.val()[key].lands,
 
-                  })
+                      })
+                  }
+
               })
               this.requests = requests;
           });
@@ -233,36 +267,21 @@
           },
       },
     methods:{
-        signAndSendTransaction2: function (web3, account, transaction) {
+        signAndSendTransaction: function (web3, account, modal, transaction) {
             return account.signTransaction(transaction).then( function (results) {
                 if ('rawTransaction' in results) {
                     web3.eth.sendSignedTransaction(results.rawTransaction).then(function (receipt) {
-                        console.log("second sent")
+                        console.log(results)
+                        modal.loading = true
+                        modal.accept = false
+                        modal.reject = false
                     }).catch(console.error);
-                }
 
-            })
-                .catch(console.error);
-        },
-        signAndSendTransaction: function (web3, account, abi2, transaction2function, transaction, ) {
-            return account.signTransaction(transaction).then( function (results) {
-                if ('rawTransaction' in results) {
-                    web3.eth.sendSignedTransaction(results.rawTransaction).then(function (receipt) {
-                        console.log("first sent")
-                        transaction2function(web3, account, {
-                            from: account.address,
-                            to: web3const.CONTRACTADDRESS,
-                            gas: '3000000',
-                            data: abi2
-                        });
-                    }).catch(console.error);
                 }
-
             })
                 .catch(console.error);
         },
         checkRequest: function(rid, modal, item){
-            modal.loading = true
             this.modal.itemHash = sha256(JSON.stringify(item))
             if (Web3) {
                 const web3 = new Web3(new Web3.providers.HttpProvider(web3const.HTTPPROVIDER));
@@ -272,8 +291,6 @@
                     .checkRequest(parseInt(rid))
                     .call()
                     .then(function (result) {
-                        modal.content = result;
-                        modal.loading = false;
                     })
                     .catch(console.error);
             } else {
@@ -282,6 +299,8 @@
         },
         onClickAccept(item, modal){
             this.item = item
+            modal.loading = true
+            modal.accept = true
             var itemHash = sha256(JSON.stringify({
                 companyName: item.companyName,
                 companyReason: item.companyReason,
@@ -290,14 +309,15 @@
             if (Web3) {
                 const web3 = new Web3(new Web3.providers.HttpProvider(web3const.HTTPPROVIDER));
                 const contract = new web3.eth.Contract(web3const.ABI, web3const.CONTRACTADDRESS);
+
                 contract
                     .methods
                     .checkRequest(parseInt(item.ID))
                     .call()
                     .then(function (result) {
-                        modal.accept = true
+
                         item.hash = result[4] === itemHash;
-                        console.log(item)
+                        modal.loading = false
                     })
                     .catch(console.error);
             } else {
@@ -306,6 +326,9 @@
             this.request = item;
         },
         onClickReject(item, modal){
+            this.item = item
+            modal.loading = true
+            modal.reject = true
             var itemHash = sha256(JSON.stringify({
                 companyName: item.companyName,
                 companyReason: item.companyReason,
@@ -319,8 +342,9 @@
                     .checkRequest(parseInt(item.ID))
                     .call()
                     .then(function (result) {
-                        modal.accept = true
+
                         item.hash = result[4] === itemHash;
+                        modal.loading = false;
                     })
                     .catch(console.error);
             } else {
@@ -328,12 +352,8 @@
             }
             this.request = item;
         },
-        reject(item, reason,){
-            let outHash = {
-                companyName: item.companyName,
-                companyReason: item.companyReason,
-                lands: item.lands,
-            }
+        reject(item, reason, modal){
+            modal.loading = true;
             let outDb = {
                 companyName: item.companyName,
                 companyReason: item.companyReason,
@@ -346,34 +366,32 @@
                 const contract = new web3.eth.Contract(web3const.ABI, web3const.CONTRACTADDRESS);
                 const account = web3.eth.accounts.privateKeyToAccount('0x' + this.key);
                 const gasPrice = (30000).toString();
-                let encodedABI1 = contract.methods.rejectRequest(parseInt(item.ID)).encodeABI();
-                let encodedABI2 = contract.methods.setHash(parseInt(item.ID), sha256(JSON.stringify(outHash))).encodeABI();
-                this.signAndSendTransaction(web3, account, encodedABI2, this.signAndSendTransaction2,{
+                let encodedABI = contract.methods.rejectRequest(parseInt(item.ID)).encodeABI();
+                this.signAndSendTransaction(web3, account, modal,{
                     from: account.address,
                     to: web3const.CONTRACTADDRESS,
                     gas: '3000000',
-                    data: encodedABI1
+                    data: encodedABI
                 });
                 firebase.database().ref('requests/').child(item.ID.toString()).update(outDb)
             } else {
                 console.error('Cannot find web3');
             }
         },
-        accept(item, reason, selected){
-            console.log(item)
+        accept(item, reason, selected, modal){
+            modal.loading = true
             let landid = []
             selected.forEach(key => {
                 landid.push(key.landNo)
             })
-            let outHash = {
-                companyName: item.companyName,
-                companyReason: item.companyReason,
-                lands: item.lands,
+            let text = reason
+            if(landid.length>0){
+                text.concat("Invalid lands: " + landid.toString())
             }
             let outDb = {
                 companyName: item.companyName,
                 companyReason: item.companyReason,
-                landReason: reason.concat("Invalid lands: " + landid.toString()),
+                landReason: text,
                 lands: item.lands,
                 status: "accepted"
             }
@@ -382,13 +400,13 @@
                 const contract = new web3.eth.Contract(web3const.ABI, web3const.CONTRACTADDRESS);
                 const account = web3.eth.accounts.privateKeyToAccount('0x' + this.key);
                 const gasPrice = (30000).toString();
-                let encodedABI1 = contract.methods.acceptRequest(parseInt(item.ID)).encodeABI();
-                let encodedABI2 = contract.methods.setHash(parseInt(item.ID), sha256(JSON.stringify(outHash))).encodeABI();
-                this.signAndSendTransaction(web3, account, encodedABI2, this.signAndSendTransaction2,{
+                console.log(item.ID)
+                let encodedABI = contract.methods.acceptRequest(parseInt(item.ID)).encodeABI();
+                this.signAndSendTransaction(web3, account, modal, {
                     from: account.address,
                     to: web3const.CONTRACTADDRESS,
                     gas: '3000000',
-                    data: encodedABI1
+                    data: encodedABI
                 });
                 firebase.database().ref('requests/').child(item.ID.toString()).update(outDb)
             } else {

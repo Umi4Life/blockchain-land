@@ -191,10 +191,10 @@
                     companyName: store.getters.getCompanyName,
                     companyReason: this.companyReason,
                     lands: this.items,
-                    status: "unverified"
+                    status: "pending..."
                 }
                 let sha = sha256(JSON.stringify(outHash))
-                if(Web3){
+                if (Web3) {
                     const web3 = new Web3(new Web3.providers.HttpProvider(web3const.HTTPPROVIDER));
                     const account = web3.eth.accounts.privateKeyToAccount('0x' + this.key);
                     const contract = new web3.eth.Contract(web3const.ABI, web3const.CONTRACTADDRESS);
