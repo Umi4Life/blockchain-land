@@ -45,13 +45,69 @@ contract DLToken is Context, IERC20, DLToken_Interface {
     uint64 private _RIDglobal; //RID tracker
     address payable _LDaddress;
     modifier onlyLD() {
-        require(isLD(), "Only Land Department of Land has permission to do this");
+        require(isLD(), "Only Department of Land has permission to do this");
         _;
     }
     function isLD() public view returns(bool) {
         return _msgSender() == _minter;
     }
     RequestForLand[] public requests;
+    /**
+        @dev Read more in the DL_Interface
+    */
+    function acceptRequest(uint64 RID) public payable onlyLD {
+        require(checkContractBalance() >= _costWei, "Not enough wei on this contract to pay back.");
+        require(_getRequestStatus(RID) == false, "Request has been decided.");
+        _setRequestStatus(RID, true);
+        _setRequestApproval(RID, true);
+        _transfer(address(this), _minter, _costToken); // transfer money from dapp to LD
+        _LDaddress.transfer(_costWei);
+        emit DecisionOnRequest(RID, _getRequestStatus(RID), _getRequestApproval(RID));
+    }
+    /**
+        @dev Read more in the DL_Interface
+    */
+    function sendRequest(string memory encryptedData, string memory docHash) public payable returns (uint64){
+        require(balanceOf(_msgSender()) >= _costToken, 'Not enough tokens in your account');
+        require(msg.value == _costWei, 'The amount of wei is incorrect.');
+        transfer(address(this), _costToken);
+        _companyAddress[_RIDglobal] = _msgSender();
+        requests.push(RequestForLand(_RIDglobal, false, false, _msgSender(), encryptedData, docHash));
+        emit RequestSent(_msgSender(), _minter, _costToken,_RIDglobal);
+        _RIDglobal += 1;
+        return _RIDglobal-1;
+    }
+    /**
+        @dev Read more in the DL_Interface
+    */
+    function rejectRequest(uint64 RID) public payable onlyLD {
+        require(checkContractBalance() >= _costWei, "Not enough wei on this contract to pay back.");
+        require(_getRequestStatus(RID) == false, "Request has been decided.");
+        _setRequestStatus(RID, true);
+        _setRequestApproval(RID, false);
+        _transfer(address(this), requests[RID].companyAddress, _costToken);
+        _LDaddress.transfer(_costWei);
+        emit DecisionOnRequest(RID, _getRequestStatus(RID), _getRequestApproval(RID));
+    }
+    /**
+        @dev Read more in the DL_Interface
+    */
+    function checkRequest(uint64 RID) public view returns (uint64, bool, bool, address, string memory, string memory){
+        return (RID,  _getRequestStatus(RID), _getRequestApproval(RID), _getRequestAddress(RID),  _getRequestData(RID), _getRequestHash(RID));
+    }
+    /**
+        @dev Read more in the DL_Interface
+    */
+    function setHash(uint64 RID, string memory toSet) public onlyLD {
+        require(_getRequestApproval(RID) == true, "This request has not been approved.");
+        _setHash(RID, toSet);
+    }
+    /**
+        @dev Read more in the DL_Interface
+    */
+    function checkContractBalance() public view returns (uint256){
+        return address(this).balance;
+    }
     /**
      * @dev See {IERC20-totalSupply}.
      */
@@ -155,62 +211,7 @@ contract DLToken is Context, IERC20, DLToken_Interface {
         _approve(_msgSender(), spender, _allowances[_msgSender()][spender].sub(subtractedValue));
         return true;
     }
-    /**
-        @dev Read more in the DL_Interface
-    */
-    function acceptRequest(uint64 RID) public payable onlyLD {
-        require(checkContractBalance() >= _costWei, "Not enough wei on this contract to pay back.");
-        require(_getRequestStatus(RID) == false, "Request has been decided.");
-        _setRequestStatus(RID, true);
-        _setRequestApproval(RID, true);
-        _transfer(address(this), _minter, _costToken); // transfer money from dapp to LD
-        _LDaddress.transfer(_costWei);
-        emit DecisionOnRequest(RID, _getRequestStatus(RID), _getRequestApproval(RID));
-    }
-    /**
-        @dev Read more in the DL_Interface
-    */
-    function sendRequest(string memory encryptedData, string memory docHash) public payable returns (uint64){
-        require(balanceOf(_msgSender()) >= _costToken, 'Not enough tokens in your account');
-        require(msg.value == _costWei, 'The amount of wei is incorrect.');
-        transfer(address(this), _costToken);
-        _companyAddress[_RIDglobal] = _msgSender();
-        requests.push(RequestForLand(_RIDglobal, false, false, _msgSender(), encryptedData, docHash));
-        emit RequestSent(_msgSender(), _minter, _costToken,_RIDglobal);
-        _RIDglobal += 1;
-        return _RIDglobal-1;
-    }
-    /**
-        @dev Read more in the DL_Interface
-    */
-    function rejectRequest(uint64 RID) public payable onlyLD {
-        require(checkContractBalance() >= _costWei, "Not enough wei on this contract to pay back.");
-        require(_getRequestStatus(RID) == false, "Request has been decided.");
-        _setRequestStatus(RID, true);
-        _setRequestApproval(RID, false);
-        _transfer(address(this), requests[RID].companyAddress, _costToken);
-        _LDaddress.transfer(_costWei);
-        emit DecisionOnRequest(RID, _getRequestStatus(RID), _getRequestApproval(RID));
-    }
-    /**
-        @dev Read more in the DL_Interface
-    */
-    function checkRequest(uint64 RID) public view returns (uint64, bool, bool, address, string memory, string memory){
-        return (RID,  _getRequestStatus(RID), _getRequestApproval(RID), _getRequestAddress(RID),  _getRequestData(RID), _getRequestHash(RID));
-    }
-    /**
-        @dev Read more in the DL_Interface
-    */
-    function setHash(uint64 RID, string memory toSet) public onlyLD {
-        require(_getRequestApproval(RID) == true, "This request is not approved.");
-        _setHash(RID, toSet);
-    }
-    /**
-        @dev Read more in the DL_Interface
-    */
-    function checkContractBalance() public view returns (uint256){
-        return address(this).balance;
-    }
+    
     /**
      * @dev Moves tokens `amount` from `sender` to `recipient`.
      *

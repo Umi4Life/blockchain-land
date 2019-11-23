@@ -46,6 +46,10 @@ interface DLToken_Interface {
      * This will return nothing, but the request will be shown rejected and it cannot be changed.
      * This function needs a modifier to keep this function for the specific address like DL.
      */
+    function rejectRequest(uint64 RID) external payable;
+    /**
+     * @dev Check the ether balance of the smart contract.
+     */
     function checkContractBalance() external view returns (uint256);
 
     event RequestSent(address indexed from, address indexed to, uint256 value, uint64 RID);
