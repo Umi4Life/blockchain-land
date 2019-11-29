@@ -11,7 +11,6 @@
                 <v-col
                         cols="12"
                         sm="8"
-                        md="4"
                 >
 
                     <v-card  class="elevation-12" >
@@ -27,6 +26,8 @@
                         <v-card-text class="title text-left black--text">
                             <div>Reason:  {{i["companyReason"]}}</div>
                             <div>Status: {{i["status"]}}</div>
+                            <div v-if="i.transaction">Transaction:</div>
+                            <a class="text-sm-left" v-if="i.transaction" v-bind:href="'https://rinkeby.etherscan.io/tx/'+i.transaction">https://rinkeby.etherscan.io/tx/{{i["transaction"]}}</a>
                             <div>Notes: {{i["landReason"]}}</div>
                             <div>Lands: </div>
 

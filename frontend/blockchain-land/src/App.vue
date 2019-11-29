@@ -86,8 +86,9 @@
                 store.commit('setLoading', true);
                 firebase.auth().signOut()
                     .then(function(){
-                        router.replace('/')
+                        router.replace('/login')
                         store.commit('setLoading', false);
+                        store.commit('setUid', null);
 
                     })
             }

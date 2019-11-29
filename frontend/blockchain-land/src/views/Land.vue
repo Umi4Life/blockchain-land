@@ -1,5 +1,17 @@
 <template>
-    <div>
+    <v-content>
+        <v-container
+                class="fill-height"
+                fluid
+        >
+            <v-row
+                    align="center"
+                    justify="center"
+            >
+                <v-col
+                        cols="12"
+                        sm="8"
+                >
         <v-data-table
             :headers="headers"
             :items="requests"
@@ -158,8 +170,11 @@
                 </v-content>
             </v-card>
         </v-dialog>
+            </v-col>
+        </v-row>
+    </v-container>
 
-    </div>
+    </v-content>
 </template>
 
 <script>

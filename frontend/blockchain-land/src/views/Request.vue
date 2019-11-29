@@ -93,6 +93,9 @@
                     justify="center"
             >
                 <v-col
+                    cols="12"
+                    sm="8"
+                    md="4"
                 >
                     <v-text-field
                             label="Private Key"
@@ -157,6 +160,7 @@
                             modal.loading = false
                             modal.message = "Request sent!"
                             var id = parseInt("0x" + receipt.logs[1].data.slice(64+2));
+                            out.transaction = receipt.transactionHash
                             firebase.database().ref('requests/').child(id.toString()).set(out)
                             firebase.database().ref('users/' + uid).child('/requests/').push(id.toString())
                         }).catch(console.error);

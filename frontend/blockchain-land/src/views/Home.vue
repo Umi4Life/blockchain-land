@@ -2,10 +2,12 @@
   <div class="home">
 
     <h1>Blockchain Land</h1>
+    <h2 v-if="token.loading">Checking tokens left... <v-progress-circular indeterminate/></h2>
+    <h2 v-else class="grey--text light">Tokens left: {{token.value}}</h2>
     <router-link to="/Request">Request | </router-link>
     <router-link to="/CheckRequest">Check Request</router-link>
 
-    <v-container>
+    <v-container v-if="debug">
       <v-row justify="center" align="center">
 
         <v-col cols="12" sm="6" md="3">
@@ -26,7 +28,7 @@
 
       <v-btn v-if="!this.contractAddress.isDeploying" @click="deployRequest(address,key)">Deploy Contract</v-btn>
       <h1>{{this.contractAddress.value}}</h1>
-      <h1 v-if="this.contractAddress.isDeploying"> <v-progress-circular indeterminate/></h1>
+      <h1 v-if="this.contractAddress.isDeploying"> <v-progress-circular/></h1>
 
     </v-container>
 
@@ -35,18 +37,42 @@
 
 <script>
     import Web3 from 'web3'
+    import store from '../store/index'
+    import firebase from 'firebase'
     import * as web3const from '../util/web3const'
     export default {
         name: "home",
         data: () => ({
+            debug: false,
             address: "0x2B81009886091E1e0B66e7D292cde3De882015B5",
             key: "",
             contractAddress: {
                 value: " ",
                 isDeploying: false
             },
-            rid: "0x00000000000000000000000000000000000000000000000000000000000000640000000000000000000000000000000000000000000000000000000000000004"
+            token: {
+                loading: true,
+                value: 0
+            },
         }),
+        mounted(){
+            let token = this.token
+            if (Web3) {
+                const web3 = new Web3(new Web3.providers.HttpProvider(web3const.HTTPPROVIDER));
+                const contract = new web3.eth.Contract(web3const.ABI, web3const.CONTRACTADDRESS);
+                contract
+                    .methods
+                    .balanceOf(this.address)
+                    .call()
+                    .then(function (result) {
+                        token.value = result
+                        token.loading = false
+                    })
+                    .catch(console.error);
+            } else {
+                console.error('Cannot find web3');
+            }
+        },
         methods:{
             signAndSendTransaction: function (web3, contractAddress, account, transaction) {
                 return account.signTransaction(transaction).then( function (results) {
