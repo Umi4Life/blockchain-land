@@ -52,7 +52,8 @@
         >
             <v-spacer />
 
-            <span class="white--text">&copy; 2019</span>
+            <span class="white--text">Satoshi Jr.  &copy; 2019 | </span>
+            <router-link to="/aboutus" class="white--text"> About Us</router-link>
         </v-footer>
     </v-app>
 </template>

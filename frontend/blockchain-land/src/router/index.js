@@ -8,6 +8,7 @@ import Home from '../views/Home.vue'
 import CheckRequest from '../views/CheckRequest.vue'
 Vue.use(VueRouter);
 import Land from '../views/Land.vue'
+import AboutUs from '../views/AboutUs.vue'
 
 
 Vue.use(VueRouter)
@@ -57,7 +58,12 @@ const routes = [
           requiresAuth: true
       },
       component: CheckRequest,
-  }
+  },
+    {
+        path: '/aboutus',
+        name: 'aboutus',
+        component: AboutUs,
+    },
 
 ]
 
